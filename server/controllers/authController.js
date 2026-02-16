@@ -1,33 +1,35 @@
 const db = require("../config/db");
+const bcrypt = require("bcryptjs");
 const generateToken = require("../utils/generateToken");
 
-exports.login = (req, res) => {
+exports.loginAdmin = async (req, res) => {
   const { email, password } = req.body;
 
-  db.query(
-    "SELECT * FROM admins WHERE email = ?",
-    [email],
-    (err, results) => {
-      if (err) return res.status(500).json(err);
+  try {
+    const result = await db.query(
+      "SELECT * FROM admins WHERE email = $1",
+      [email]
+    );
 
-      if (results.length === 0) {
-        return res.status(400).json({ message: "Invalid credentials" });
-      }
+    const admin = result.rows[0];
 
-      const admin = results[0];
-
-      // SIMPLE PASSWORD CHECK (no bcrypt)
-      if (password !== admin.password) {
-        return res.status(400).json({ message: "Invalid credentials" });
-      }
-
-      const token = generateToken(admin.id);
-
-      res.json({
-        id: admin.id,
-        email: admin.email,
-        token,
-      });
+    if (!admin) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
-  );
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    res.json({
+      id: admin.id,
+      email: admin.email,
+      token: generateToken(admin.id),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
 };

@@ -1,24 +1,17 @@
 const db = require("../config/db");
 
-exports.createOrder = (req, res) => {
+exports.createOrder = async (req, res) => {
   const { customer_name, phone, address, item_id, quantity } = req.body;
 
-  db.query(
-    "INSERT INTO orders (customer_name, phone, address, item_id, quantity) VALUES (?, ?, ?, ?, ?)",
-    [customer_name, phone, address, item_id, quantity],
-    (err) => {
-      if (err) return res.status(500).json(err);
-      res.json({ message: "Order placed successfully" });
-    }
-  );
-};
+  try {
+    await db.query(
+      "INSERT INTO orders (customer_name, phone, address, item_id, quantity) VALUES ($1, $2, $3, $4, $5)",
+      [customer_name, phone, address, item_id, quantity]
+    );
 
-exports.getOrders = (req, res) => {
-  db.query(
-    "SELECT orders.*, menu_items.name AS item_name FROM orders JOIN menu_items ON orders.item_id = menu_items.id",
-    (err, results) => {
-      if (err) return res.status(500).json(err);
-      res.json(results);
-    }
-  );
+    res.json({ message: "Order placed successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
 };
