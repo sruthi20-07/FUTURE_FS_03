@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
+const pool = require("./config/db"); // ✅ Single DB import
 
 // Middleware
 app.use(cors());
@@ -13,12 +14,12 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/menu", require("./routes/menuRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
 
-// 🔥 TEMPORARY DATABASE SETUP ROUTE
-const db = require("./config/db");
-
+/* ===============================
+   🔥 DATABASE TABLE SETUP ROUTE
+================================= */
 app.get("/setup-db", async (req, res) => {
   try {
-    await db.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS menu_items (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100),
@@ -29,7 +30,7 @@ app.get("/setup-db", async (req, res) => {
       );
     `);
 
-    await db.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS admins (
         id SERIAL PRIMARY KEY,
         email VARCHAR(100) UNIQUE,
@@ -37,7 +38,7 @@ app.get("/setup-db", async (req, res) => {
       );
     `);
 
-    await db.query(`
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS orders (
         id SERIAL PRIMARY KEY,
         customer_name VARCHAR(100),
@@ -56,15 +57,9 @@ app.get("/setup-db", async (req, res) => {
   }
 });
 
-// Health check
-app.get("/", (req, res) => {
-  res.send("Cloud Kitchen API Running...");
-});
-
-// IMPORTANT: Use Render dynamic port
-const PORT = process.env.PORT || 5000;
-const pool = require("./config/db");
-
+/* ===============================
+   🔥 SEED DATA ROUTE
+================================= */
 app.get("/seed", async (req, res) => {
   try {
     await pool.query(`
@@ -84,12 +79,20 @@ app.get("/seed", async (req, res) => {
       ON CONFLICT DO NOTHING;
     `);
 
-    res.send("Seed data inserted successfully!");
+    res.send("Seed data inserted successfully! 🌱");
   } catch (err) {
     console.error(err);
     res.status(500).send("Error inserting data");
   }
 });
+
+// Health check
+app.get("/", (req, res) => {
+  res.send("Cloud Kitchen API Running...");
+});
+
+// IMPORTANT: Use Render dynamic port
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
