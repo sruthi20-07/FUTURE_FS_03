@@ -28,6 +28,7 @@ exports.loginAdmin = async (req, res) => {
       email: admin.email,
       token: generateToken(admin.id),
     });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server Error" });
