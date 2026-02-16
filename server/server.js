@@ -63,6 +63,33 @@ app.get("/", (req, res) => {
 
 // IMPORTANT: Use Render dynamic port
 const PORT = process.env.PORT || 5000;
+const pool = require("./config/db");
+
+app.get("/seed", async (req, res) => {
+  try {
+    await pool.query(`
+      INSERT INTO admins (email, password)
+      VALUES ('admin@gmail.com', '$2b$10$wH5HqYfYQhL8e7zH3jH7kO2OqY5C6d9yZlM5G8N4H6Q9F8J1K2L3O')
+      ON CONFLICT (email) DO NOTHING;
+    `);
+
+    await pool.query(`
+      INSERT INTO menu_items (name, description, price, category)
+      VALUES
+      ('Veg Thali', 'Rice, Dal, Sabzi, Roti', 120, 'Main Course'),
+      ('Paneer Butter Masala', 'Creamy North Indian curry', 180, 'Main Course'),
+      ('Veg Spring Rolls', 'Crispy starter rolls', 90, 'Starters'),
+      ('Gulab Jamun', 'Sweet Indian dessert', 60, 'Desserts'),
+      ('Fresh Lime Soda', 'Refreshing drink', 40, 'Beverages')
+      ON CONFLICT DO NOTHING;
+    `);
+
+    res.send("Seed data inserted successfully!");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error inserting data");
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
